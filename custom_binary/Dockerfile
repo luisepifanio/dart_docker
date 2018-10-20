@@ -8,3 +8,8 @@ ADD ./dart-sdk/bin /usr/lib/dart/bin
 
 ENV DART_SDK /usr/lib/dart
 ENV PATH $DART_SDK/bin:$PATH
+
+EXPOSE 8080 8181 5858
+
+CMD []
+ENTRYPOINT ["/usr/lib/dart/bin/dart" "--version"]
