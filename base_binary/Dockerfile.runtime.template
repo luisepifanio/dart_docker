@@ -1,0 +1,27 @@
+# Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
+# for details. All rights reserved. Use of this source code is governed by a
+# BSD-style license that can be found in the LICENSE file.
+#
+# Dockerfile for google/dart-binary-runtime
+
+FROM {{NAMESPACE}}/dart-odroid-rt-base
+
+WORKDIR /app
+
+ONBUILD ADD pubspec.* /app/
+ONBUILD RUN pub get --no-precompile
+ONBUILD ADD . /app/
+ONBUILD RUN pub get --offline --no-precompile
+
+WORKDIR /app
+# Expose ports for 
+# 1. 5858 => debugger
+# 2. 8080 => application traffic
+# 3. 8181 => the observatory
+EXPOSE 8080 8181 5858
+
+ENV DBG_OPTION="--debug:${DBG_PORT:-5858}/0.0.0.0"
+
+ENTRYPOINT [ "pub", "run", "aqueduct:aqueduct", "serve", "--port", "8080" , \
+$DBG_OPTION, \
+"--observe" ]

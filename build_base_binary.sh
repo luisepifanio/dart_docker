@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
-# Build a Docker image with Dart using a specific .deb file.
+# Build a Docker image with Dart using released binaries
 #
 # This is only used for testing with a custom build of Dart where
 # an already built zip file is used.
 #
-#  tools/create_debian_chroot.sh
+
+check_installed () {
+  type "$1" > /dev/null 2>&1 || { echo >&2 "✖ program/command '$1' is required but it's not installed.  Aborting."; return 1; }
+}
 
 REPO_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
@@ -14,11 +17,7 @@ CHANNEL="stable" #dev
 RELEASE="$1"
 PLATFORM="linux"
 ARCH="arm64"
-
-
-check_installed () {
-  type "$1" > /dev/null 2>&1 || { echo >&2 "✖ program/command '$1' is required but it's not installed.  Aborting."; return 1; }
-}
+TAG=""
 
 if [ $# -lt 1 ] || [ $# -gt 1 ]
 then
@@ -37,7 +36,8 @@ PLATFORM=$PLATFORM
 ARCH=$PLATFORM
 "
 
-mkdir "$REPO_ROOT/custom_binary"
+BASE_BIN_DIR="$REPO_ROOT/base_binary"
+mkdir "$BASE_BIN_DIR"
 wget --continue -O "dartsdk.binary.zip" "https://storage.googleapis.com/dart-archive/channels/$CHANNEL/release/$RELEASE/sdk/dartsdk-$PLATFORM-$ARCH-release.zip"
 
 if [ "$?" != 0 ]; then
@@ -45,10 +45,11 @@ if [ "$?" != 0 ]; then
   exit
 fi
 
-unzip -q "dartsdk.binary.zip" -d "$REPO_ROOT/custom_binary"
+unzip -q "dartsdk.binary.zip" -d "$BASE_BIN_DIR"
 
-docker build -t $REPOSITORY_PREFIX/dart $REPO_ROOT/custom_binary
-docker tag $REPOSITORY_PREFIX/dart $REPOSITORY_PREFIX/dart-custom-binary
+docker build -t "$REPOSITORY_PREFIX/dart" "$BASE_BIN_DIR"
+docker tag "$REPOSITORY_PREFIX/dart" "$REPOSITORY_PREFIX/dart-odroid-rt-base"
 
-rm -rf "$REPO_ROOT/custom_binary/dart-sdk"
+echo "Deleting downloaded files"
+rm -rf "$BASE_BIN_DIR/dart-sdk"
 rm "dartsdk.binary.zip"
